@@ -1,3 +1,4 @@
+#species versicolor
 dtaframe2 <- data.frame(iris)
 dtaframe2
 
@@ -21,4 +22,17 @@ pwidth2
 vrsicolor <- c(slength2, swidth2, plength2, pwidth2)
 vrsicolor
 
+#mean of sepal length
+mean(slength2)
+
+#mean of sepal width
+mean(swidth2)
+
+#mean of petal length
+mean(plength2)
+
+#mean of petal width
+mean(pwidth2)
+
+#mean of species versicolor
 mean(vrsicolor)

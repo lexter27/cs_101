@@ -1,3 +1,4 @@
+#species virginica
 dtaframe3 <- data.frame(iris)
 dtaframe3
 
@@ -21,4 +22,17 @@ pwidth3
 vrginica <- c(slength3, swidth3, plength3, pwidth3)
 vrginica
 
+#mean of sepal length
+mean(slength3)
+
+#mean of sepal width
+mean(swidth3)
+
+#mean of petal length
+mean(plength3)
+
+#mean of petal width
+mean(pwidth3)
+
+#mean of species virginica
 mean(vrginica)
