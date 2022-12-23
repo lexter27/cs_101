@@ -1,0 +1,175 @@
+install.packages("tm")
+install.packages("tidytext")
+install.packages("plotly")
+install.packages("wordcloud")
+install.packages("RColorBrewer")
+install.packages("dplyr")
+install.packages("wordcloud2")
+install.packages("syuzhet")
+install.packages("magrittr")
+install.packages("stringr")
+install.packages("tidyr")
+install.packages("twitteR")
+
+
+library(wordcloud)
+library(plotly)
+library(tm)
+library(tidytext)
+library(dplyr)
+library(RColorBrewer)
+library(wordcloud2)
+library(syuzhet)
+library(magrittr)
+library(stringr)
+library(tidyr)
+library(twitteR)
+library(ggplot2)
+
+CONSUMER_KEY <- "TePwgjlqiIoeS7eaAFA6Zx5bC"
+CONSUMER_SECRET <- "q8EFgX9LgNV7fLJ053B86r2ZfnFlVYHoImJPpdDpekArQjfc85"
+ACCESS_TOKEN <- "1198911894733504513-9S5NveHRcLMeX2T6fQfMbUHdtxPRgF"
+ACCESS_SECRET <- "iXC27jpiMT87qXCgWUoMh0Qpcx9V1dcmn0Y8DBPkYhC7z"
+
+#connect to twitter
+setup_twitter_oauth(consumer_key = CONSUMER_KEY,
+                    consumer_secret = CONSUMER_SECRET,
+                    access_token = ACCESS_TOKEN,
+                    access_secret = ACCESS_SECRET)
+
+#extracting tweets
+trend_Tweets <- searchTwitter("#LISA -filter:retweets", n=10000, lang="en", since="2022-12-12", until="2022-12-18", retryOnRateLimit = 120)
+trend_Tweets
+
+#converting list to data frame
+trend_TweetsDF <- twListToDF(trend_Tweets)
+class(trend_TweetsDF)
+names(trend_TweetsDF)
+View(trend_TweetsDF)
+head(trend_TweetsDF)[1:5]
+head(trend_TweetsDF$text)[1:5]
+
+#save data frame file
+save(trend_TweetsDF,file = "trendingTweetsDF.Rdata")
+
+#load the data frame file
+load(file = "trendingTweetsDF.Rdata")
+
+#saving file as r data
+save(trend_TweetsDF, file = "tweetsDF.Rdata")
+
+#checking the missing value on data frame
+sap_1 <- sapply(trend_TweetsDF, function(x) sum(is.na(x)))
+sap_1
+
+# subsetting using the dplyr() package
+tweetsDF <- trend_TweetsDF %>% select(screenName,text,created,statusSource)
+tweetsDF
+
+#grouping the data created 
+tweetsDF %>%  
+  group_by(1) %>%  
+  summarise(max = max(created), min = min(created))
+
+mutate1 <- tweetsDF %>%  mutate(Created_At_Round = created %>% round(units = 'hours') %>% as.POSIXct())
+mutate1
+
+tweetsDF %>% pull(created) %>% min() 
+tweetsDF %>% pull(created) %>% max()
+
+# Plot on tweets by time using the library(plotly) and ggplot().
+plt1 <- mutate1 %>% 
+  dplyr::count(Created_At_Round) %>% 
+  ggplot(mapping = aes(x = Created_At_Round, y = n)) +
+  theme_light() +
+  geom_line() +
+  xlab(label = 'Date') +
+  ylab(label = NULL) +
+  ggtitle(label = 'Number of Tweets per Hour')
+
+plt1 %>% ggplotly()
+
+# ==============================================
+
+ggplot(data = tweetsDF, aes(x = created)) +
+  geom_histogram(aes(fill = ..count..)) +
+  theme(legend.position = "right") +
+  xlab("Time") + ylab("Number of Tweets") + 
+  scale_fill_gradient(low = "#132B43", high = "#56B1F7")
+
+# plotting the status source
+encodeSource <- function(x) {
+  if(grepl(">Twitter for iPhone</a>", x)){
+    "iphone"
+  }else if(grepl(">Twitter for iPad</a>", x)){
+    "ipad"
+  }else if(grepl(">Twitter for Android</a>", x)){
+    "android"
+  } else if(grepl(">Twitter Web Client</a>", x)){
+    "Web"
+  } else if(grepl(">Twitter for Windows Phone</a>", x)){
+    "windows phone"
+  }else if(grepl(">dlvr.it</a>", x)){
+    "dlvr.it"
+  }else if(grepl(">IFTTT</a>", x)){
+    "ifttt"
+  }else if(grepl(">Facebook</a>", x)){  
+    "facebook"
+  }else {
+    "others"
+  }
+}
+
+
+tweetsDF$tweetSource = sapply(tweetsDF$statusSource, 
+                               encodeSource)
+
+tweet_appSource1 <- tweetsDF %>% 
+  select(tweetSource) %>%
+  group_by(tweetSource) %>%
+  summarize(count=n()) %>%
+  arrange(desc(count))
+
+ggplot(tweetsDF[tweetsDF$tweetSource != 'others',], aes(tweetSource, fill = tweetSource)) +
+  geom_bar() +
+  theme(legend.position="none",
+        axis.title.x = element_blank(),
+        axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ylab("Number of Tweets") +
+  ggtitle("Tweets by Source")
+
+# account which tweet about jisoo
+tweet_appScreen1 <- tweetsDF %>%
+  select(screenName) %>%
+  group_by(screenName) %>%
+  summarize(count=n()) %>%
+  arrange(desc(count)) 
+
+#convert to Corpus
+namesCorpus1 <- Corpus(VectorSource(tweetsDF$screenName))  #using ScreenName
+class(tweetsDF$screenName)
+
+cls_data1 <- class(VectorSource(tweetsDF$screenName))
+cls_data1
+
+str(namesCorpus1)
+
+class(namesCorpus1)
+
+nms1 <- namesCorpus1
+nms1
+
+# wordcloud for screenname
+pal11 <- brewer.pal(8, "Dark2")
+pal21 <- pal11[-(1:4)]
+set.seed(123)
+
+par(mar = c(0,0,0,0), mfrow = c(1,1))
+
+wordcloud(words = namesCorpus1, scale=c(3,0.5),
+          max.words=10000,
+          random.order=FALSE,
+          rot.per=0.5,
+          use.r.layout=TRUE,
+          colors=pal11)
+
